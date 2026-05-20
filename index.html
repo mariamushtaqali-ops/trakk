@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trakk</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh;font-size:14px}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:#2d3148;border-radius:2px}
+input,select,textarea{background:#1e2130;border:1px solid #2d3148;color:#e2e8f0;border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;width:100%;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#6366f1}
+select option{background:#1e2130}
+button{cursor:pointer;font-family:inherit;border:none;outline:none}
+.topbar{background:#13151f;border-bottom:1px solid #1e2235;padding:0 16px;display:flex;align-items:center;gap:12px;height:52px;position:sticky;top:0;z-index:50;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px}
+.logo-icon{width:28px;height:28px;background:#6366f1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.tabs{display:flex;gap:2px}
+.tab{padding:6px 14px;border-radius:7px;font-size:13px;font-weight:500;color:#64748b;background:transparent;transition:all .15s;cursor:pointer;border:none}
+.tab.active{background:#1e2130;color:#e2e8f0}
+.stat-bar{background:#0d0f18;border-bottom:1px solid #1a1d2e;padding:6px 16px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.main{padding:14px 16px}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:8px;font-size:13px;font-weight:500;transition:all .12s;white-space:nowrap;cursor:pointer;border:none}
+.btn-primary{background:#6366f1;color:#fff}
+.btn-primary:hover{background:#5254cc}
+.btn-ghost{background:transparent;color:#64748b;border:1px solid #1e2235}
+.btn-ghost:hover{background:#1e2130;color:#e2e8f0}
+.btn-ghost.on{background:#1e2130;color:#e2e8f0;border-color:#6366f1}
+.btn-sm{padding:5px 9px;font-size:12px}
+.btn-success{background:#14532d;color:#4ade80}
+.btn-success:hover{background:#166534}
+.btn-danger{background:#3b0f0f;color:#f87171}
+.kanban{display:flex;gap:12px;align-items:flex-start;overflow-x:auto;padding-bottom:8px}
+.col{flex:0 0 300px}
+.col-hdr{display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.col-title{font-size:13px;font-weight:600}
+.col-count{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+.card{background:#181b27;border:1px solid #1e2235;border-radius:11px;padding:13px;margin-bottom:9px;cursor:pointer;transition:border-color .15s,transform .1s}
+.card:hover{border-color:#2d3355;transform:translateY(-1px)}
+.card.delayed{border-color:#92400e;background:#1a150d;animation:dp 2s ease-in-out infinite}
+@keyframes dp{0%,100%{border-color:#92400e}50%{border-color:#d97706}}
+.pill{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid transparent}
+.p-new{background:#1c1005;color:#f97316;border-color:#7c2d12}
+.p-assigned{background:#0c1a2e;color:#38bdf8;border-color:#0c4a6e}
+.p-delivered{background:#052e16;color:#4ade80;border-color:#14532d}
+.p-delayed{background:#1c1005;color:#f59e0b;border-color:#78350f;font-size:10px}
+.p-pending{background:#1e2130;color:#94a3b8;border-color:#334155}
+.p-riderpaid{background:#0c1a2e;color:#38bdf8;border-color:#0c4a6e}
+.p-custpaid{background:#1a0d2e;color:#a78bfa;border-color:#4c1d95}
+.p-settled{background:#052e16;color:#4ade80;border-color:#14532d}
+.rider-chip{display:flex;align-items:center;gap:6px;background:#0d0f18;border-radius:6px;padding:4px 8px;margin:6px 0}
+.avatar{width:22px;height:22px;border-radius:50%;background:#1a0d2e;color:#a78bfa;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+.note-bar{margin-top:7px;font-size:11px;color:#475569;background:#0d0f18;padding:4px 8px;border-radius:5px;border-left:2px solid #2d3148}
+.empty-col{text-align:center;color:#2d3148;font-size:13px;padding:28px 0;border:1px dashed #1e2235;border-radius:11px}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
+.overlay.open{display:flex}
+.modal{background:#181b27;border:1px solid #1e2235;border-radius:16px;padding:22px;width:100%;max-width:440px;margin:auto}
+.modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.field{margin-bottom:12px}
+.lbl{font-size:11px;color:#475569;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.modal-actions{display:flex;gap:8px;margin-top:16px}
+.divider{border:none;border-top:1px solid #1e2235;margin:12px 0}
+.tl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.delay-banner{background:#1c1005;border:1px solid #78350f;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#f59e0b}
+.rider-row{background:#181b27;border:1px solid #1e2235;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.r-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{padding:8px 12px;text-align:left;color:#334155;font-size:11px;font-weight:600;text-transform:uppercase;border-bottom:1px solid #1e2235;background:#13151f}
+.tbl td{padding:9px 12px;border-bottom:1px solid #0d0f18}
+.tbl tr:hover td{background:#13151f}
+.metric-card{background:#181b27;border:1px solid #1e2235;border-radius:11px;padding:16px}
+.m-label{font-size:11px;color:#475569;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.m-val{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.bar-bg{background:#0d0f18;border-radius:3px;height:5px;margin-top:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .3s}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#181b27;border:1px solid #2d3355;border-radius:9px;padding:9px 18px;font-size:13px;font-weight:500;z-index:300;display:none;white-space:nowrap}
+.toast.show{display:block}
+.section{display:none}
+.section.active{display:block}
+.toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+</style>
+</head>
+<body>
+
+<div id="loading-msg" style="position:fixed;inset:0;background:#0f1117;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:9999">
+  <div style="font-size:40px">🛵</div>
+  <div style="color:#6366f1;font-size:18px;font-weight:700">Trakk</div>
+  <div style="color:#475569;font-size:13px" id="loading-status">Starting...</div>
+</div>
+
+<div class="topbar">
+  <div class="logo"><div class="logo-icon">🛵</div>Trakk</div>
+  <div style="width:1px;height:20px;background:#1e2235"></div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('board',this)">Board</button>
+    <button class="tab" onclick="showTab('riders',this)">Riders</button>
+    <button class="tab" onclick="showTab('payments',this)">Payments</button>
+    <button class="tab" onclick="showTab('settlement',this)">Settlement</button>
+    <button class="tab" onclick="showTab('analytics',this)">Analytics</button>
+  </div>
+  <div style="flex:1"></div>
+  <div id="delay-alert" style="display:none;background:#1c1005;color:#f59e0b;font-size:12px;font-weight:600;padding:4px 10px;border-radius:6px;border:1px solid #78350f;margin-right:6px"></div>
+  <button class="btn btn-primary btn-sm" onclick="openNewOrder()">+ New Order</button>
+</div>
+
+<div class="stat-bar">
+  <div><span style="font-size:17px;font-weight:700;color:#6366f1" id="s-active">0</span><span style="font-size:11px;color:#475569;margin-left:4px">Active</span></div>
+  <div><span style="font-size:17px;font-weight:700;color:#f97316" id="s-new">0</span><span style="font-size:11px;color:#475569;margin-left:4px">New</span></div>
+  <div><span style="font-size:17px;font-weight:700;color:#38bdf8" id="s-assigned">0</span><span style="font-size:11px;color:#475569;margin-left:4px">Assigned</span></div>
+  <div><span style="font-size:17px;font-weight:700;color:#4ade80" id="s-done">0</span><span style="font-size:11px;color:#475569;margin-left:4px">Done today</span></div>
+  <div><span style="font-size:17px;font-weight:700;color:#a78bfa" id="s-free">0</span><span style="font-size:11px;color:#475569;margin-left:4px">Free riders</span></div>
+  <div style="flex:1"></div>
+  <span style="font-size:11px;color:#334155" id="clock"></span>
+  <span id="conn-dot" style="font-size:11px;color:#4ade80;margin-left:10px">● Live</span>
+</div>
+
+<div class="main">
+  <div id="sec-board" class="section active">
+    <div class="toolbar">
+      <input type="text" id="search" placeholder="Search orders, merchant, area, rider..." oninput="renderBoard()" style="max-width:260px;flex:1">
+      <button class="btn btn-ghost btn-sm on" onclick="setFilter('all',this)">All</button>
+      <button class="btn btn-ghost btn-sm" onclick="setFilter('new',this)">New</button>
+      <button class="btn btn-ghost btn-sm" onclick="setFilter('assigned',this)">Assigned</button>
+      <button class="btn btn-ghost btn-sm" onclick="setFilter('delivered',this)">Delivered</button>
+    </div>
+    <div class="kanban" id="kanban"><div style="color:#334155;padding:20px">Loading orders...</div></div>
+  </div>
+
+  <div id="sec-riders" class="section">
+    <div id="riders-list"><div style="color:#334155;padding:20px">Loading riders...</div></div>
+  </div>
+
+  <div id="sec-payments" class="section">
+    <div style="margin-bottom:12px"><input type="text" id="pay-search" placeholder="Search payments..." oninput="renderPayments()" style="max-width:260px"></div>
+    <div style="overflow-x:auto;background:#181b27;border:1px solid #1e2235;border-radius:11px;margin-bottom:14px">
+      <table class="tbl"><thead><tr><th>Order</th><th>Merchant</th><th>Area</th><th>Amount</th><th>Rider</th><th>Payment</th><th>Update</th></tr></thead>
+      <tbody id="pay-tbody"></tbody></table>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px" id="pay-summary"></div>
+  </div>
+
+  <div id="sec-settlement" class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-size:16px;font-weight:700">Weekly Settlement</div>
+        <div style="font-size:12px;color:#475569;margin-top:2px">Monday to Sunday · Rs 15 commission per ride</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="renderSettlement()">Generate This Week</button>
+    </div>
+    <div id="settlement-week"></div>
+    <div id="settlement-cards"></div>
+  </div>
+
+  <div id="sec-analytics" class="section">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:16px" id="an-metrics"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="metric-card"><div style="font-size:13px;font-weight:600;color:#64748b;margin-bottom:12px">Order status</div><div id="an-status"></div></div>
+      <div class="metric-card"><div style="font-size:13px;font-weight:600;color:#64748b;margin-bottom:12px">Payment status</div><div id="an-pay"></div></div>
+    </div>
+    <div class="metric-card">
+      <div style="font-size:13px;font-weight:600;color:#64748b;margin-bottom:12px">Rider performance</div>
+      <table class="tbl"><thead><tr><th>Rider</th><th>Deliveries</th><th>Active</th><th>Status</th></tr></thead><tbody id="an-riders"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="new-overlay" onclick="if(event.target===this)closeNew()">
+<div class="modal">
+  <div class="modal-hdr"><span style="font-size:16px;font-weight:700">New Delivery Order</span><button class="btn btn-ghost btn-sm" onclick="closeNew()">✕</button></div>
+  <div class="field"><div class="lbl">Merchant / Cafe *</div><select id="n-merchant"><option value="">Select merchant...</option></select></div>
+  <div class="field"><div class="lbl">Drop Area *</div><select id="n-area" onchange="areaSelected()"><option value="">Select area...</option></select></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div class="field"><div class="lbl">Food Amount Rs</div><input type="number" id="n-amount" placeholder="e.g. 1200" oninput="calcTotal()"></div>
+    <div class="field"><div class="lbl">Delivery Fee Rs</div><input type="number" id="n-delivery-fee" placeholder="200" oninput="calcTotal()" style="color:#4ade80;font-weight:600"></div>
+  </div>
+  <div class="field"><div class="lbl">Total Rider Collects</div><input type="text" id="n-total" readonly style="background:#13151f;color:#a78bfa;font-weight:700;font-size:15px" placeholder="Rs 0"></div>
+  <hr style="border:none;border-top:1px solid #1e2235;margin:4px 0 12px">
+  <div style="font-size:11px;color:#6366f1;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Customer Details</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div class="field"><div class="lbl">Customer Name</div><input type="text" id="n-cust-name" placeholder="Ali Hassan"></div>
+    <div class="field"><div class="lbl">Customer Phone</div><input type="text" id="n-cust-phone" placeholder="0312-3456789"></div>
+  </div>
+  <div class="field"><div class="lbl">Delivery Address</div><textarea id="n-cust-address" rows="2" placeholder="House 45, Street 3, DHA Phase 4"></textarea></div>
+  <div class="field"><div class="lbl">📍 Location Pin (Google Maps link)</div><input type="text" id="n-location-pin" placeholder="Paste Google Maps link here..."></div>
+  <div class="field"><div class="lbl">Assign Rider (optional)</div><select id="n-rider"><option value="">Assign later</option></select></div>
+  <div class="field"><div class="lbl">Notes</div><textarea id="n-notes" rows="2" placeholder="Special instructions..."></textarea></div>
+  <div class="modal-actions">
+    <button class="btn btn-ghost" style="flex:1" onclick="closeNew()">Cancel</button>
+    <button class="btn btn-primary" style="flex:2" onclick="createOrder()">Create Order</button>
+  </div>
+</div></div>
+
+<div class="overlay" id="edit-overlay" onclick="if(event.target===this)closeEdit()">
+<div class="modal" id="edit-modal"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// CONFIG — your Supabase credentials
+// ═══════════════════════════════════════════════
+const URL  = 'https://hbcddsiylzuxmxkkthrw.supabase.co';
+const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhiY2Rkc2l5bHp1eG14a2t0aHJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5ODY3MDAsImV4cCI6MjA5NDU2MjcwMH0.1-nZSr-BA1Wvk_f3BaHo7n7rsJO5cYm7TcYpcZPA32I';
+const COMM = 15; // Rs commission per ride
+
+// ═══════════════════════════════════════════════
+// SUPABASE API — direct fetch, no library needed
+// ═══════════════════════════════════════════════
+async function db(table, method='GET', body=null, filters='') {
+  const res = await fetch(`${URL}/rest/v1/${table}${filters}`, {
+    method,
+    headers: {
+      'apikey': KEY,
+      'Authorization': 'Bearer ' + KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method==='POST' ? 'return=representation' : 'return=minimal',
+    },
+    body: body ? JSON.stringify(body) : null,
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  if (method === 'DELETE' || method === 'PATCH') return true;
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
+
+const dbGet    = (table, filters='') => db(table, 'GET', null, filters);
+const dbInsert = (table, body)       => db(table, 'POST', body);
+const dbUpdate = (table, body, filter) => db(table, 'PATCH', body, '?'+filter);
+const dbDelete = (table, filter)     => db(table, 'DELETE', null, '?'+filter);
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let orders=[], riders=[], areaFees={}, MERCHANTS=[];
+let AREAS=['DHA Phase 1','DHA Phase 2','DHA Phase 4','DHA Phase 6','Clifton Block 1','Clifton Block 2','Clifton Block 3','Clifton Block 4','Clifton Block 5','Clifton Block 6','Clifton Block 9'];
+let filterStatus='all', editId=null;
+const DELAY_MINS=8;
+
+// ═══════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════
+const now = () => new Date();
+const fmt = d => new Date(d).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'});
+const diffM = (a,b) => Math.floor(((b?new Date(b):now())-new Date(a))/60000);
+const initials = n => (n||'?').split(' ').map(x=>x[0]).join('').toUpperCase().substring(0,2);
+const isDelayed = o => o.status==='new' && diffM(o.created_at)>=DELAY_MINS;
+const freeRiders = () => riders.filter(r=>r.status==='free');
+function uid(){const d=new Date(),dt=d.toISOString().slice(2,10).replace(/-/g,''),r=Math.floor(Math.random()*9000+1000);return 'ORD-'+dt+'-'+r;}
+function payInfo(p){return({'pending':{cls:'p-pending',label:'Pending'},'rider-paid':{cls:'p-riderpaid',label:'Rider Paid Cafe'},'customer-paid':{cls:'p-custpaid',label:'Online Paid'},'cafe-settle':{cls:'p-riderpaid',label:'Settling at Cafe'},'settled':{cls:'p-settled',label:'Settled'}})[p]||{cls:'p-pending',label:'Pending'};}
+function toast(msg,type){const t=document.getElementById('toast');t.textContent=(type==='err'?'✗ ':type==='warn'?'⚠ ':'✓ ')+msg;t.style.borderColor=type==='err'?'#7f1d1d':type==='warn'?'#78350f':'#1e3a5f';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function updateClock(){const d=new Date();document.getElementById('clock').textContent=d.toLocaleDateString('en-PK',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'});}
+function setLoading(msg){const el=document.getElementById('loading-status');if(el)el.textContent=msg;}
+
+// ═══════════════════════════════════════════════
+// LOAD DATA
+// ═══════════════════════════════════════════════
+async function loadAll() {
+  try {
+    setLoading('Loading orders...');
+    const [o, r, m, af] = await Promise.all([
+      dbGet('orders', '?order=created_at.desc'),
+      dbGet('riders', '?order=name'),
+      dbGet('merchants', '?order=name&select=id,name,area,phone,whatsapp'),
+      dbGet('area_fees'),
+    ]);
+    orders   = o || [];
+    riders   = r || [];
+    MERCHANTS = (m||[]).map(x=>x.name);
+    window._merchants = m||[]; // store full merchant objects for WhatsApp numbers
+    areaFees = {};
+    (af||[]).forEach(x => areaFees[x.area]=x.delivery_fee);
+    const dbAreas = Object.keys(areaFees);
+    if(dbAreas.length) AREAS = [...new Set([...dbAreas,...AREAS])];
+    setLoading('Done');
+    document.getElementById('loading-msg').style.display='none';
+    renderAll();
+    // Poll every 10 seconds for live updates
+    setInterval(silentRefresh, 10000);
+  } catch(e) {
+    setLoading('Error: '+e.message);
+    document.getElementById('loading-status').style.color='#f87171';
+    console.error(e);
+  }
+}
+
+async function silentRefresh() {
+  try {
+    const [o,r] = await Promise.all([
+      dbGet('orders','?order=created_at.desc'),
+      dbGet('riders','?order=name'),
+    ]);
+    orders = o||[];
+    riders = r||[];
+    renderAll();
+  } catch(e){ console.error('refresh error',e); }
+}
+
+// ═══════════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════════
+window.addEventListener('load', () => {
+  updateClock();
+  setInterval(updateClock, 30000);
+  const params = new URLSearchParams(window.location.search);
+  const action = params.get('action');
+  const orderId = params.get('order');
+  const riderId = params.get('rider');
+  const riderName = params.get('name');
+  // One-tap action link (picked up / delivered / payment)
+  if(action && orderId){
+    handleAction(action, orderId, riderId);
+    return;
+  }
+  // Rider mobile page
+  if(riderId && riderName){
+    showRiderPage(riderId, decodeURIComponent(riderName||'Rider'));
+    return;
+  }
+  // Normal dispatcher dashboard
+  loadAll();
+});
+
+// ═══════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════
+function renderAll(){updateStats();checkDelays();renderBoard();renderRiders();renderPayments();renderAnalytics();}
+
+function updateStats(){
+  const today=new Date();today.setHours(0,0,0,0);
+  document.getElementById('s-active').textContent=orders.filter(o=>o.status!=='delivered'&&o.status!=='cancelled').length;
+  document.getElementById('s-new').textContent=orders.filter(o=>o.status==='new').length;
+  document.getElementById('s-assigned').textContent=orders.filter(o=>o.status==='assigned').length;
+  document.getElementById('s-done').textContent=orders.filter(o=>o.status==='delivered'&&new Date(o.delivered_at||0)>=today).length;
+  document.getElementById('s-free').textContent=freeRiders().length;
+}
+
+function checkDelays(){
+  const dl=orders.filter(isDelayed),da=document.getElementById('delay-alert');
+  if(dl.length){da.style.display='block';da.textContent='⚠ '+dl.length+' delayed';}
+  else da.style.display='none';
+}
+
+function setFilter(s,btn){
+  filterStatus=s;
+  document.querySelectorAll('.toolbar .btn-ghost').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderBoard();
+}
+
+function renderBoard(){
+  const q=(document.getElementById('search').value||'').toLowerCase();
+  const filtered=orders.filter(o=>{
+    const ms=filterStatus==='all'||o.status===filterStatus;
+    const mq=!q||o.id.toLowerCase().includes(q)||(o.merchant_name||'').toLowerCase().includes(q)||(o.drop_area||'').toLowerCase().includes(q)||(o.rider_name||'').toLowerCase().includes(q);
+    return ms&&mq;
+  });
+  const cols=[
+    {status:'new',label:'New',lc:'#f97316',cc:'#1c1005',cb:'#7c2d12'},
+    {status:'assigned',label:'Assigned',lc:'#38bdf8',cc:'#0c1a2e',cb:'#0c4a6e'},
+    {status:'delivered',label:'Delivered',lc:'#4ade80',cc:'#052e16',cb:'#14532d'},
+  ];
+  document.getElementById('kanban').innerHTML=cols.map(col=>{
+    const co=filtered.filter(o=>o.status===col.status).sort((a,b)=>{
+      if(isDelayed(a)&&!isDelayed(b))return -1;
+      if(!isDelayed(a)&&isDelayed(b))return 1;
+      return new Date(b.created_at)-new Date(a.created_at);
+    });
+    return '<div class="col"><div class="col-hdr"><span class="col-title" style="color:'+col.lc+'">'+col.label+'</span><span class="col-count" style="background:'+col.cc+';color:'+col.lc+';border:1px solid '+col.cb+'">'+co.length+'</span></div>'+(co.length?co.map(cardHTML).join(''):'<div class="empty-col">No orders</div>')+'</div>';
+  }).join('');
+}
+
+function cardHTML(o){
+  const delayed=isDelayed(o),age=diffM(o.created_at),pm=payInfo(o.payment),fr=freeRiders();
+  const rc=o.rider_name?'<div class="rider-chip"><div class="avatar">'+initials(o.rider_name)+'</div><span style="font-size:12px;color:#a78bfa;font-weight:500">'+o.rider_name+'</span>'+(o.picked_up_at?'<span style="font-size:10px;background:#0c2d1a;color:#4ade80;padding:2px 6px;border-radius:10px;margin-left:4px">🛵 En route</span>':'')+'</div>':'';
+  let actions='';
+  if(o.status==='new'&&fr.length)actions='<select style="font-size:11px;padding:4px 6px;width:auto;max-width:130px" onchange="quickAssign(\''+o.id+'\',this.value)" onclick="event.stopPropagation()"><option value="">Assign rider</option>'+fr.map(r=>'<option value="'+r.id+'|'+r.name+'">'+r.name+'</option>').join('')+'</select>';
+  if(o.status==='assigned')actions='<div style="display:flex;gap:5px"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();showWAFromEdit(\''+o.id+'\')">📱</button><button class="btn btn-success btn-sm" onclick="event.stopPropagation();quickDeliver(\''+o.id+'\')">✓ Done</button></div>';
+  const nb=o.notes?'<div class="note-bar">📝 '+o.notes+'</div>':'';
+  const total=(o.amount||0)+(o.delivery_fee||0);
+  return '<div class="card'+(delayed?' delayed':'')+'" onclick="openEdit(\''+o.id+'\')">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
+    +'<div><div style="font-size:11px;color:#6366f1;font-weight:600;margin-bottom:2px">'+o.id+(delayed?' <span class="pill p-delayed">DELAYED</span>':'')+'</div>'
+    +'<div style="font-weight:600;font-size:14px">'+o.merchant_name+'</div>'
+    +'<div style="font-size:12px;color:#475569;margin-top:2px">📍 '+o.drop_area+'</div></div>'
+    +'<div style="text-align:right">'
+    +(total?'<div style="font-weight:700;color:#a78bfa;font-size:13px">Rs '+total.toLocaleString()+'</div>':'')
+    +'<div style="font-size:11px;color:#334155;margin-top:2px">'+fmt(o.created_at)+' · '+age+'m</div></div></div>'
+    +rc+'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span class="pill '+pm.cls+'">'+pm.label+'</span>'+actions+'</div>'+nb+'</div>';
+}
+
+// ═══════════════════════════════════════════════
+// ORDER ACTIONS
+// ═══════════════════════════════════════════════
+async function quickAssign(orderId,riderVal){
+  if(!riderVal)return;
+  const[riderId,riderName]=riderVal.split('|');
+  await dbUpdate('orders',{rider_id:riderId,rider_name:riderName,status:'assigned',assigned_at:new Date().toISOString()},'id=eq.'+orderId);
+  await dbUpdate('riders',{status:'busy'},'id=eq.'+riderId);
+  toast('Assigned to '+riderName);
+  await silentRefresh();
+  // Fetch fresh order data including customer details
+  const freshOrders=await dbGet('orders','?id=eq.'+orderId);
+  const order=(freshOrders&&freshOrders[0])||orders.find(o=>o.id===orderId)||{id:orderId,merchant_name:'',drop_area:'',amount:0,delivery_fee:0};
+  const rider=riders.find(r=>r.id===riderId)||{id:riderId,name:riderName};
+  showWhatsAppMessage(order,rider);
+}
+
+async function quickDeliver(orderId){
+  const o=orders.find(x=>x.id===orderId);
+  await dbUpdate('orders',{status:'delivered',delivered_at:new Date().toISOString()},'id=eq.'+orderId);
+  if(o&&o.rider_id){
+    const still=orders.filter(x=>x.id!==orderId&&x.rider_id===o.rider_id&&x.status==='assigned').length>0;
+    if(!still)await dbUpdate('riders',{status:'free'},'id=eq.'+o.rider_id);
+  }
+  toast('Order delivered');
+  await silentRefresh();
+}
+
+function openNewOrder(){
+  document.getElementById('n-merchant').innerHTML='<option value="">Select merchant...</option>'+MERCHANTS.map(m=>'<option>'+m+'</option>').join('');
+  document.getElementById('n-area').innerHTML='<option value="">Select area...</option>'+AREAS.map(a=>'<option>'+a+'</option>').join('');
+  document.getElementById('n-rider').innerHTML='<option value="">Assign later</option>'+freeRiders().map(r=>'<option value="'+r.id+'|'+r.name+'">'+r.name+' (free)</option>').join('');
+  document.getElementById('n-amount').value='';
+  document.getElementById('n-delivery-fee').value='';
+  document.getElementById('n-total').value='';
+  document.getElementById('n-cust-name').value='';
+  document.getElementById('n-cust-phone').value='';
+  document.getElementById('n-cust-address').value='';
+  document.getElementById('n-location-pin').value='';
+  document.getElementById('n-notes').value='';
+  document.getElementById('new-overlay').classList.add('open');
+}
+function closeNew(){document.getElementById('new-overlay').classList.remove('open');}
+
+function areaSelected(){
+  const area=document.getElementById('n-area').value;
+  const fee=areaFees[area]||200;
+  document.getElementById('n-delivery-fee').value=fee;
+  calcTotal();
+}
+function calcTotal(){
+  const food=parseInt(document.getElementById('n-amount').value)||0;
+  const fee=parseInt(document.getElementById('n-delivery-fee').value)||0;
+  document.getElementById('n-total').value=(food+fee)?'Rs '+(food+fee).toLocaleString():'';
+}
+
+async function createOrder(){
+  const merchant=document.getElementById('n-merchant').value,area=document.getElementById('n-area').value;
+  if(!merchant||!area){toast('Select merchant and area','warn');return;}
+  const amount=parseInt(document.getElementById('n-amount').value)||0;
+  const deliveryFee=parseInt(document.getElementById('n-delivery-fee').value)||200;
+  const notes=document.getElementById('n-notes').value.trim();
+  const custName=document.getElementById('n-cust-name').value.trim();
+  const custPhone=document.getElementById('n-cust-phone').value.trim();
+  const custAddress=document.getElementById('n-cust-address').value.trim();
+  const locationPin=document.getElementById('n-location-pin').value.trim();
+  const rv=document.getElementById('n-rider').value;
+  const[riderId,riderName]=rv?rv.split('|'):[null,null];
+  const no={id:uid(),merchant_name:merchant,drop_area:area,amount,delivery_fee:deliveryFee,total_collected:amount+deliveryFee,notes:notes||null,customer_name:custName||null,customer_phone:custPhone||null,customer_address:custAddress||null,location_pin:locationPin||null,status:riderId?'assigned':'new',rider_id:riderId||null,rider_name:riderName||null,payment:'pending',assigned_at:riderId?new Date().toISOString():null};
+  try{
+    await dbInsert('orders',no);
+    if(riderId)await dbUpdate('riders',{status:'busy'},'id=eq.'+riderId);
+    closeNew();toast('Order created');await silentRefresh();
+    // If rider assigned, show WhatsApp message to send
+    if(riderId){
+      const rider=riders.find(r=>r.id===riderId);
+      showWhatsAppMessage(no, rider);
+    }
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+// ═══════════════════════════════════════════════
+// EDIT MODAL
+// ═══════════════════════════════════════════════
+function openEdit(id){
+  editId=id;
+  const o=orders.find(x=>x.id===id);if(!o)return;
+  const delayed=isDelayed(o),fr=freeRiders();
+  const tl=[{label:'Received',time:o.created_at,color:'#6366f1'},o.assigned_at&&{label:'Assigned',time:o.assigned_at,color:'#38bdf8'},o.delivered_at&&{label:'Delivered',time:o.delivered_at,color:'#4ade80'}].filter(Boolean);
+  const tlHTML=tl.map((t,i)=>'<div style="display:flex;gap:8px;margin-bottom:7px"><div class="tl-dot" style="background:'+t.color+'"></div><div style="font-size:12px"><span style="color:#94a3b8">'+t.label+'</span><span style="color:#334155;margin-left:8px">'+fmt(t.time)+'</span>'+(i>0?'<span style="color:#1e2235;margin-left:6px">(+'+diffM(tl[i-1].time,t.time)+'m)</span>':'')+'</div></div>').join('');
+  const assignSelect=(o.status==='new'&&fr.length)?'<div class="field"><div class="lbl">Assign Rider</div><select onchange="editAssign(this.value)"><option value="">Select rider...</option>'+fr.map(r=>'<option value="'+r.id+'|'+r.name+'">'+r.name+'</option>').join('')+'</select></div>':'';
+  document.getElementById('edit-modal').innerHTML=
+    '<div class="modal-hdr"><div><div style="font-size:11px;color:#6366f1;font-weight:600;margin-bottom:2px">'+o.id+'</div><div style="font-size:17px;font-weight:700">'+o.merchant_name+'</div></div><button class="btn btn-ghost btn-sm" onclick="closeEdit()">✕</button></div>'
+    +(delayed?'<div class="delay-banner">⚠ Waiting '+diffM(o.created_at)+' minutes without rider</div>':'')
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'
+    +'<div><div class="lbl">Drop area</div><div style="font-weight:500">📍 '+o.drop_area+'</div></div>'
+    +'<div><div class="lbl">Food amount</div><div style="font-weight:700;color:#4ade80">Rs '+(o.amount||0).toLocaleString()+'</div></div>'
+    +'<div><div class="lbl">Delivery fee</div><div style="font-weight:700;color:#4ade80">Rs '+(o.delivery_fee||0).toLocaleString()+'</div></div>'
+    +'<div><div class="lbl">Total collected</div><div style="font-weight:700;color:#a78bfa">Rs '+((o.amount||0)+(o.delivery_fee||0)).toLocaleString()+'</div></div>'
+    +'<div><div class="lbl">Rider</div><div style="color:#a78bfa;font-weight:500">'+(o.rider_name||'Unassigned')+'</div></div>'
+    +'<div><div class="lbl">Status</div><span class="pill '+(o.status==='new'?'p-new':o.status==='assigned'?'p-assigned':'p-delivered')+'">'+o.status+'</span></div>'
+    +'</div><hr class="divider">'
+    +'<div style="margin-bottom:14px"><div class="lbl" style="margin-bottom:8px">Timeline</div>'+tlHTML+'</div><hr class="divider">'
+    +assignSelect
+    +'<div class="field"><div class="lbl">Payment</div><select id="e-payment" onchange="editPayment(this.value)"><option value="pending" '+(o.payment==='pending'?'selected':'')+'>Pending</option><option value="rider-paid" '+(o.payment==='rider-paid'?'selected':'')+'>Rider Paid Cafe</option><option value="customer-paid" '+(o.payment==='customer-paid'?'selected':'')+'>Online Paid</option><option value="cafe-settle" '+(o.payment==='cafe-settle'?'selected':'')+'>Settling at Cafe</option><option value="settled" '+(o.payment==='settled'?'selected':'')+'>Settled</option></select></div>'
+    +'<div class="field"><div class="lbl">Notes</div><textarea id="e-notes" rows="2" onblur="editNotes(this.value)">'+(o.notes||'')+'</textarea></div>'
+    +'<div class="modal-actions"><button class="btn btn-danger btn-sm" onclick="deleteOrder(\''+o.id+'\')">Delete</button><div style="flex:1"></div>'
+    +(o.status==='assigned'?'<button class="btn btn-ghost btn-sm" onclick="showWAFromEdit(\''+o.id+'\')">📱 WhatsApp</button>':'')
+    +(o.status==='assigned'?'<button class="btn btn-success" onclick="editDeliver(\''+o.id+'\')">✓ Mark Delivered</button>':'')
+    +'<button class="btn btn-ghost" onclick="closeEdit()">Close</button></div>';
+  document.getElementById('edit-overlay').classList.add('open');
+}
+function closeEdit(){document.getElementById('edit-overlay').classList.remove('open');editId=null;}
+async function editAssign(val){if(!val)return;await quickAssign(editId,val);closeEdit();}
+async function editPayment(v){await dbUpdate('orders',{payment:v},'id=eq.'+editId);await silentRefresh();}
+async function editNotes(v){await dbUpdate('orders',{notes:v},'id=eq.'+editId);}
+async function editDeliver(id){await quickDeliver(id);closeEdit();}
+async function deleteOrder(id){if(!confirm('Delete this order?'))return;await dbDelete('orders','id=eq.'+id);closeEdit();toast('Deleted','warn');await silentRefresh();}
+
+// ═══════════════════════════════════════════════
+// RIDERS TAB
+// ═══════════════════════════════════════════════
+function renderRiders(){
+  const el=document.getElementById('riders-list');
+  if(!riders.length){el.innerHTML='<div style="color:#334155;padding:20px">No riders found. Add riders in Supabase table editor.</div>';return;}
+  const base=window.location.href.split('?')[0];
+  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px">'+riders.map(r=>{
+    const active=orders.filter(o=>o.rider_id===r.id&&o.status==='assigned');
+    const isFree=r.status==='free';
+    const riderLink=base+'?rider='+r.id+'&name='+encodeURIComponent(r.name);
+    const locOrder=active.find(o=>o.rider_location_lat);
+    const mapsLink=locOrder?'https://www.google.com/maps?q='+locOrder.rider_location_lat+','+locOrder.rider_location_lng:null;
+    return '<div class="rider-row" style="flex-direction:column;align-items:flex-start">'
+      +'<div style="display:flex;align-items:center;gap:10px;width:100%">'
+      +'<div class="r-avatar" style="background:'+(isFree?'#052e16':'#1a0d2e')+';color:'+(isFree?'#4ade80':'#a78bfa')+'">'+initials(r.name)+'</div>'
+      +'<div style="flex:1"><div style="font-weight:600">'+r.name+'</div><div style="font-size:12px;color:#334155">'+(r.phone||'')+'</div></div>'
+      +'<span class="pill '+(isFree?'p-delivered':'p-custpaid')+'" style="margin-right:4px">'+(isFree?'Free':'Busy')+'</span>'
+      +'<select style="width:auto;font-size:11px;padding:3px 6px" onchange="setRiderStatus(\''+r.id+'\',this.value)">'
+      +'<option value="free" '+(r.status==='free'?'selected':'')+'>Free</option>'
+      +'<option value="busy" '+(r.status==='busy'?'selected':'')+'>Busy</option>'
+      +'<option value="offline" '+(r.status==='offline'?'selected':'')+'>Offline</option>'
+      +'</select></div>'
+      +'<div style="width:100%;margin-top:10px;padding-top:10px;border-top:1px solid #1e2235">'
+      +'<div style="width:100%;margin-top:10px;padding-top:10px;border-top:1px solid #1e2235;display:flex;gap:8px;align-items:center">'
+      +'<div style="font-size:11px;color:#475569;flex:1">Send this link to rider once on WhatsApp so they can view their active orders</div>'
+      +'<button class="btn btn-ghost btn-sm" onclick="copyLink(\''+riderLink+'\',\''+r.name+'\')" style="flex-shrink:0;white-space:nowrap">📋 Copy Link</button>'
+      +'</div>'
+      +'</div>'
+      +(mapsLink?'<div style="width:100%;margin-top:8px"><a href="'+mapsLink+'" target="_blank" style="display:flex;align-items:center;gap:6px;background:#0c2d1a;border:1px solid #14532d;border-radius:7px;padding:8px 10px;text-decoration:none"><span>📍</span><div><div style="font-size:12px;color:#4ade80;font-weight:600">View Live Location</div></div><span style="margin-left:auto;font-size:11px;color:#4ade80">Open Maps →</span></a></div>':'')
+      +(active.length?'<div style="width:100%;margin-top:8px">'+active.map(o=>'<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:4px 0;border-top:1px solid #1e2235"><span style="color:#6366f1">'+o.id+'</span><span style="color:#94a3b8">'+o.merchant_name+'</span><button class="btn btn-success btn-sm" style="padding:2px 7px;font-size:11px" onclick="quickDeliver(\''+o.id+'\')">Done</button></div>').join('')+'</div>':'<div style="font-size:12px;color:#1e2235;margin-top:6px">No active orders</div>')
+      +'</div>';
+  }).join('')+'</div>';
+}
+
+async function setRiderStatus(rid,val){await dbUpdate('riders',{status:val},'id=eq.'+rid);await silentRefresh();}
+
+let _lastWAMsg='';
+
+function showWhatsAppMessage(order, rider){
+  const base=window.location.href.split('?')[0];
+  const pickedUrl=base+'?action=picked&order='+order.id+'&rider='+(rider?.id||'');
+  const doneUrl=base+'?action=done&order='+order.id+'&rider='+(rider?.id||'');
+  const pay1Url=base+'?action=pay1&order='+order.id;
+  const pay2Url=base+'?action=pay2&order='+order.id;
+  const pay3Url=base+'?action=pay3&order='+order.id;
+  const total=(order.amount||0)+(order.delivery_fee||0);
+
+  // Find cafe WhatsApp number from merchants list
+  const merchant=window._merchants?(window._merchants.find(m=>m.name===order.merchant_name)):null;
+  const cafeWA=merchant?.whatsapp||null;
+  const deliveredTime=new Date().toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'});
+  const cafeMsg=encodeURIComponent(
+    '✅ Order Delivered — Trakk\n'
+    +'Order: '+order.id+'\n'
+    +'Delivered to: '+(order.customer_name||order.drop_area)+'\n'
+    +'Time: '+deliveredTime+'\n'
+    +'Amount: Rs '+total.toLocaleString()+'\n\n'
+    +'Thank you 🙏'
+  );
+  const cafeNotifyUrl=cafeWA?'https://wa.me/'+cafeWA+'?text='+cafeMsg:null;
+
+  const msg='🛵 New Delivery — Trakk\n'
+    +'━━━━━━━━━━━━━━━━━━━━\n'
+    +'Order: '+order.id+'\n'
+    +'Pickup: '+order.merchant_name+'\n\n'
+    +'Deliver to:\n'
+    +(order.customer_name?order.customer_name+'\n':'')
+    +(order.customer_phone?order.customer_phone+'\n':'')
+    +(order.customer_address?order.customer_address+'\n':'📍 '+order.drop_area+'\n')
+    +(order.location_pin?'\n📍 Open in Maps:\n'+order.location_pin+'\n':'')
+    +'\nCollect from customer: Rs '+total.toLocaleString()
+    +'\n(Food Rs '+(order.amount||0).toLocaleString()+' + Delivery Rs '+(order.delivery_fee||0).toLocaleString()+')'
+    +(order.notes?'\n\nNote: '+order.notes:'')
+    +'\n━━━━━━━━━━━━━━━━━━━━\n'
+    +'👇 TAP AS YOU GO\n\n'
+    +'📦 Picked up food:\n'+pickedUrl+'\n\n'
+    +'✅ Delivered to customer:\n'+doneUrl+'\n'
+    +(cafeNotifyUrl?'\n📬 Notify cafe of delivery:\n'+cafeNotifyUrl+'\n':'')
+    +'━━━━━━━━━━━━━━━━━━━━\n'
+    +'💰 PAYMENT — tap after delivery\n\n'
+    +'1️⃣ I paid cafe + collected from customer:\n'+pay1Url+'\n\n'
+    +'2️⃣ Customer paid online — cafe gave me delivery fee:\n'+pay2Url+'\n\n'
+    +'3️⃣ I paid cafe — will settle at cafe after:\n'+pay3Url;
+
+  _lastWAMsg=msg;
+
+  document.getElementById('edit-modal').innerHTML=
+    '<div class="modal-hdr"><div style="font-weight:700;font-size:15px">Send to '+(rider?.name||'Rider')+' on WhatsApp</div><button class="btn btn-ghost btn-sm" onclick="closeEdit()">✕</button></div>'
+    +'<div style="background:#0d0f18;border-radius:8px;padding:12px;font-size:12px;color:#94a3b8;white-space:pre-wrap;line-height:1.7;margin-bottom:14px;max-height:320px;overflow-y:auto">'+msg+'</div>'
+    +'<div style="font-size:12px;color:#475569;margin-bottom:12px">Copy and send to '+(rider?.name||'rider')+' on WhatsApp. Rider taps links as they go — dashboard updates automatically.'+(cafeNotifyUrl?' Cafe notification link included.':'')+'</div>'
+    +'<div class="modal-actions">'
+    +'<button class="btn btn-ghost" onclick="closeEdit()">Close</button>'
+    +'<button class="btn btn-primary" style="flex:1" onclick="copyWAMessage()">📋 Copy Message</button>'
+    +'</div>';
+  document.getElementById('edit-overlay').classList.add('open');
+}
+
+function copyWAMessage(){
+  const msg=_lastWAMsg;
+  if(!msg){toast('Nothing to copy','warn');return;}
+  navigator.clipboard.writeText(msg).then(()=>toast('Message copied — paste into WhatsApp')).catch(()=>{
+    const el=document.createElement('textarea');el.value=msg;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);toast('Message copied — paste into WhatsApp');
+  });
+}
+
+async function showWAFromEdit(orderId){
+  // Fetch fresh order with all customer details
+  const freshOrders=await dbGet('orders','?id=eq.'+orderId);
+  const o=(freshOrders&&freshOrders[0])||orders.find(x=>x.id===orderId);
+  const rider=riders.find(r=>r.id===o?.rider_id);
+  if(o)showWhatsAppMessage(o,rider);
+}
+
+// ═══════════════════════════════════════════════
+// ONE-TAP ACTION HANDLER
+// ═══════════════════════════════════════════════
+async function handleAction(action, orderId, riderId){
+  // Instantly blank
+  document.body.innerHTML='<div style="position:fixed;inset:0;background:#0f1117;display:flex;align-items:center;justify-content:center"><div style="color:#4ade80;font-size:13px">Updating...</div></div>';
+
+  const paymentMap={pay1:'rider-paid',pay2:'customer-paid',pay3:'cafe-settle'};
+
+  try{
+    if(action==='picked'){
+      await dbUpdate('orders',{picked_up_at:new Date().toISOString()},'id=eq.'+orderId);
+    }
+    if(action==='done'){
+      await dbUpdate('orders',{status:'delivered',delivered_at:new Date().toISOString()},'id=eq.'+orderId);
+      if(riderId){
+        const remaining=await dbGet('orders','?rider_id=eq.'+riderId+'&status=eq.assigned');
+        if(!remaining||remaining.length===0)await dbUpdate('riders',{status:'free'},'id=eq.'+riderId);
+      }
+    }
+    if(paymentMap[action]){
+      await dbUpdate('orders',{payment:paymentMap[action]},'id=eq.'+orderId);
+    }
+
+    // Show brief confirmation then redirect back to WhatsApp
+    document.body.innerHTML='<div style="position:fixed;inset:0;background:#0f1117;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px">'
+      +'<div style="font-size:32px">'+(action==='done'?'✅':action==='picked'?'📦':'💰')+'</div>'
+      +'<div style="color:#4ade80;font-size:14px;font-weight:600">Done — you can close this tab</div>'
+      +'</div>';
+
+    // On mobile — redirect back to WhatsApp after 1.5 seconds
+    // On desktop — just show confirmation (window.close won't work either)
+    const isMobile=/iPhone|iPad|Android/i.test(navigator.userAgent);
+    if(isMobile){
+      setTimeout(()=>{ window.location.href='whatsapp://'; },1500);
+    }
+
+  }catch(e){
+    document.body.innerHTML='<div style="position:fixed;inset:0;background:#0f1117;display:flex;align-items:center;justify-content:center"><div style="color:#f87171;font-size:12px;padding:20px;text-align:center">Error. Tell dispatcher.<br>'+e.message+'</div></div>';
+  }
+}
+// ═══════════════════════════════════════════════
+function copyLink(url,name){
+  navigator.clipboard.writeText(url).then(()=>toast('Link copied for '+name)).catch(()=>{
+    const el=document.createElement('textarea');el.value=url;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);toast('Link copied for '+name);
+  });
+}
+
+function renderPayments(){
+  const q=(document.getElementById('pay-search').value||'').toLowerCase();
+  const filtered=orders.filter(o=>!q||o.id.toLowerCase().includes(q)||(o.merchant_name||'').toLowerCase().includes(q)||(o.rider_name||'').toLowerCase().includes(q));
+  document.getElementById('pay-tbody').innerHTML=filtered.map(o=>{
+    const pm=payInfo(o.payment);
+    return '<tr><td style="color:#6366f1;font-weight:600">'+o.id+'</td><td style="font-weight:500">'+o.merchant_name+'</td><td style="color:#475569">'+o.drop_area+'</td><td style="color:#4ade80;font-weight:700">Rs '+((o.amount||0)+(o.delivery_fee||0)).toLocaleString()+'</td><td style="color:#94a3b8">'+(o.rider_name||'—')+'</td><td><span class="pill '+pm.cls+'">'+pm.label+'</span></td><td><select style="font-size:11px;padding:3px 6px;width:auto" onchange="updatePayment(\''+o.id+'\',this.value)"><option value="pending" '+(o.payment==='pending'?'selected':'')+'>Pending</option><option value="rider-paid" '+(o.payment==='rider-paid'?'selected':'')+'>Rider Paid Cafe</option><option value="customer-paid" '+(o.payment==='customer-paid'?'selected':'')+'>Online Paid</option><option value="cafe-settle" '+(o.payment==='cafe-settle'?'selected':'')+'>Settling at Cafe</option><option value="settled" '+(o.payment==='settled'?'selected':'')+'>Settled</option></select></td></tr>';
+  }).join('');
+  const summary=[{label:'Pending',key:'pending',color:'#f97316'},{label:'Rider Float',key:'rider-paid',color:'#38bdf8'},{label:'Collected',key:'customer-paid',color:'#a78bfa'},{label:'Settled',key:'settled',color:'#4ade80'}];
+  document.getElementById('pay-summary').innerHTML=summary.map(s=>{
+    const amt=orders.filter(o=>o.payment===s.key).reduce((a,o)=>a+(o.amount||0),0);
+    return '<div class="metric-card"><div class="m-label">'+s.label+'</div><div class="m-val" style="color:'+s.color+';font-size:18px">Rs '+amt.toLocaleString()+'</div></div>';
+  }).join('');
+}
+async function updatePayment(id,v){await dbUpdate('orders',{payment:v},'id=eq.'+id);await silentRefresh();}
+
+// ═══════════════════════════════════════════════
+// SETTLEMENT TAB
+// ═══════════════════════════════════════════════
+function getWeekRange(){
+  const today=new Date(),day=today.getDay(),diff=day===0?-6:1-day;
+  const mon=new Date(today);mon.setDate(today.getDate()+diff);mon.setHours(0,0,0,0);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);sun.setHours(23,59,59,999);
+  return{start:mon,end:sun};
+}
+function fmtDate(d){return new Date(d).toLocaleDateString('en-PK',{day:'numeric',month:'short'});}
+
+async function renderSettlement(){
+  const week=getWeekRange();
+  document.getElementById('settlement-week').innerHTML=
+    '<div style="background:#181b27;border:1px solid #1e2235;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;margin-bottom:4px">'
+    +'<span style="font-size:13px;color:#64748b">Week:</span>'
+    +'<span style="font-weight:600">'+fmtDate(week.start)+' — '+fmtDate(week.end)+'</span>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;margin-top:8px">'
+    +'<div style="background:#0c1a2e;border:1px solid #0c4a6e;border-radius:8px;padding:12px">'
+    +'<div style="font-size:11px;color:#38bdf8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Level 1 — Partner Settlement</div>'
+    +'<div style="font-size:12px;color:#64748b;line-height:1.6">Rider settles with cafe per order. Tracked via payment status on each order.</div>'
+    +'</div>'
+    +'<div style="background:#1a0d2e;border:1px solid #4c1d95;border-radius:8px;padding:12px">'
+    +'<div style="font-size:11px;color:#a78bfa;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Level 2 — Company Commission</div>'
+    +'<div style="font-size:12px;color:#64748b;line-height:1.6">Rider pays Rs 15 per ride to company. Settled weekly every Monday.</div>'
+    +'</div>'
+    +'</div>';
+
+  const weekOrders=orders.filter(o=>o.status==='delivered'&&o.delivered_at&&new Date(o.delivered_at)>=week.start&&new Date(o.delivered_at)<=week.end);
+  if(!weekOrders.length){document.getElementById('settlement-cards').innerHTML='<div style="text-align:center;color:#334155;padding:40px;font-size:13px">No delivered orders this week yet</div>';return;}
+
+  const byRider={};
+  weekOrders.forEach(o=>{
+    if(!o.rider_id)return;
+    if(!byRider[o.rider_id])byRider[o.rider_id]={riderId:o.rider_id,riderName:o.rider_name||'Unknown',orders:[]};
+    byRider[o.rider_id].orders.push(o);
+  });
+
+  document.getElementById('settlement-cards').innerHTML=Object.values(byRider).map(r=>{
+    const rides=r.orders.length;
+    const commission=rides*COMM;
+    const riderPaidCafe=r.orders.filter(o=>o.payment==='rider-paid').length;
+    const onlinePaid=r.orders.filter(o=>o.payment==='customer-paid').length;
+    const cafeSettle=r.orders.filter(o=>o.payment==='cafe-settle').length;
+    const partnerSettled=r.orders.filter(o=>['rider-paid','customer-paid','cafe-settle','settled'].includes(o.payment)).length;
+    const partnerPending=rides-partnerSettled;
+    const cashFloat=r.orders.filter(o=>o.payment==='rider-paid').reduce((s,o)=>s+(o.amount||0),0);
+    const deliveryEarned=r.orders.reduce((s,o)=>s+(o.delivery_fee||200),0);
+    const netKeep=deliveryEarned-commission;
+
+    return '<div class="metric-card" style="margin-bottom:14px">'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #1e2235">'
+      +'<div class="r-avatar" style="width:40px;height:40px;background:#1a0d2e;color:#a78bfa;font-size:14px">'+initials(r.riderName)+'</div>'
+      +'<div><div style="font-weight:700;font-size:15px">'+r.riderName+'</div>'
+      +'<div style="font-size:12px;color:#475569">'+rides+' deliveries this week</div></div>'
+      +'</div>'
+      // Level 1
+      +'<div style="background:#0c1a2e;border:1px solid #0c4a6e;border-radius:8px;padding:12px;margin-bottom:10px">'
+      +'<div style="font-size:11px;color:#38bdf8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Level 1 — Partner Settlement</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:8px">'
+      +'<div style="background:#0d0f18;border-radius:6px;padding:8px"><div style="font-size:11px;color:#475569;margin-bottom:2px">Rider paid cafe</div><div style="font-weight:700;color:#38bdf8">'+riderPaidCafe+' orders</div></div>'
+      +'<div style="background:#0d0f18;border-radius:6px;padding:8px"><div style="font-size:11px;color:#475569;margin-bottom:2px">Online paid</div><div style="font-weight:700;color:#a78bfa">'+onlinePaid+' orders</div></div>'
+      +'<div style="background:#0d0f18;border-radius:6px;padding:8px"><div style="font-size:11px;color:#475569;margin-bottom:2px">Settling at cafe</div><div style="font-weight:700;color:#f97316">'+cafeSettle+' orders</div></div>'
+      +'<div style="background:#0d0f18;border-radius:6px;padding:8px"><div style="font-size:11px;color:#475569;margin-bottom:2px">Still pending</div><div style="font-weight:700;color:'+(partnerPending>0?'#f87171':'#4ade80')+'">'+partnerPending+' orders</div></div>'
+      +'</div>'
+      +(cashFloat>0?'<div style="font-size:12px;color:#94a3b8;padding-top:8px;border-top:1px solid #1e2235">Cash paid to cafes this week: <span style="color:#38bdf8;font-weight:600">Rs '+cashFloat.toLocaleString()+'</span> — already recovered from customers</div>':'')
+      +'</div>'
+      // Level 2
+      +'<div style="background:#1a0d2e;border:1px solid #4c1d95;border-radius:8px;padding:12px;margin-bottom:10px">'
+      +'<div style="font-size:11px;color:#a78bfa;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Level 2 — Company Commission</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">'
+      +'<div style="background:#0d0f18;border-radius:6px;padding:8px"><div style="font-size:11px;color:#475569;margin-bottom:2px">Total rides</div><div style="font-weight:700;color:#6366f1;font-size:18px">'+rides+'</div></div>'
+      +'<div style="background:#0d0f18;border-radius:6px;padding:8px"><div style="font-size:11px;color:#475569;margin-bottom:2px">Delivery earned</div><div style="font-weight:700;color:#4ade80">Rs '+deliveryEarned.toLocaleString()+'</div></div>'
+      +'<div style="background:#0d0f18;border-radius:6px;padding:8px"><div style="font-size:11px;color:#475569;margin-bottom:2px">Commission due</div><div style="font-weight:700;color:#f97316">Rs '+commission.toLocaleString()+'</div></div>'
+      +'</div>'
+      +'<div style="font-size:12px;color:#94a3b8;line-height:2;padding-top:8px;border-top:1px solid #1e2235">'
+      +rides+' rides × Rs '+COMM+' = <span style="color:#f97316;font-weight:600">Rs '+commission.toLocaleString()+' owed to company</span><br>'
+      +'Rider net delivery earnings: <span style="color:#4ade80;font-weight:600">Rs '+netKeep.toLocaleString()+'</span>'
+      +'</div>'
+      +'</div>'
+      +'<button class="btn btn-success" style="width:100%" onclick="markSettled(\''+r.riderId+'\',\''+r.riderName+'\','+rides+','+commission+','+cashFloat+','+netKeep+',\'rider_pays_company\')">✓ Mark Commission Settled — Rs '+commission.toLocaleString()+'</button>'
+      +'</div>';
+  }).join('');
+}
+
+async function markSettled(riderId,riderName,rides,commission,float,net,direction){
+  const week=getWeekRange();
+  try{
+    await dbInsert('settlements',{
+      rider_id:riderId,rider_name:riderName,
+      week_start:week.start.toISOString().slice(0,10),
+      week_end:week.end.toISOString().slice(0,10),
+      total_rides:rides,commission_per_ride:COMM,
+      total_commission:commission,total_float:float,
+      net_amount:net,net_direction:direction,
+      status:'settled',settled_at:new Date().toISOString()
+    });
+    // Mark all rider orders this week as fully settled
+    const riderWeekOrders=orders.filter(o=>
+      o.rider_id===riderId&&o.status==='delivered'&&o.delivered_at&&
+      new Date(o.delivered_at)>=week.start&&new Date(o.delivered_at)<=week.end
+    );
+    for(const o of riderWeekOrders){
+      await dbUpdate('orders',{payment:'settled'},'id=eq.'+o.id);
+    }
+    toast(riderName+' commission settled — all orders marked Settled');
+    await silentRefresh();
+    renderSettlement();
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+// ═══════════════════════════════════════════════
+// ANALYTICS TAB
+// ═══════════════════════════════════════════════
+function renderAnalytics(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const done=orders.filter(o=>o.status==='delivered'&&new Date(o.delivered_at||0)>=today);
+  const delayed=orders.filter(isDelayed);
+  const assigns=orders.filter(o=>o.assigned_at).map(o=>diffM(o.created_at,o.assigned_at));
+  const avg=assigns.length?Math.round(assigns.reduce((a,b)=>a+b,0)/assigns.length):0;
+  document.getElementById('an-metrics').innerHTML=[{label:'Total orders',val:orders.length,color:'#6366f1'},{label:'Delivered today',val:done.length,color:'#4ade80'},{label:'Active',val:orders.filter(o=>o.status!=='delivered').length,color:'#38bdf8'},{label:'Delayed',val:delayed.length,color:'#f97316'},{label:'Avg assign',val:avg+'m',color:'#a78bfa'},{label:'Free riders',val:freeRiders().length,color:'#4ade80'}].map(m=>'<div class="metric-card"><div class="m-label">'+m.label+'</div><div class="m-val" style="color:'+m.color+'">'+m.val+'</div></div>').join('');
+  const st=[{s:'new',l:'New',c:'#f97316'},{s:'assigned',l:'Assigned',c:'#38bdf8'},{s:'delivered',l:'Delivered',c:'#4ade80'}];
+  document.getElementById('an-status').innerHTML=st.map(x=>{const cnt=orders.filter(o=>o.status===x.s).length,pct=orders.length?Math.round(cnt/orders.length*100):0;return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:'+x.c+';font-weight:500">'+x.l+'</span><span style="color:#334155">'+cnt+' ('+pct+'%)</span></div><div class="bar-bg"><div class="bar-fill" style="width:'+pct+'%;background:'+x.c+'"></div></div></div>';}).join('');
+  const pays=[{k:'pending',l:'Pending',c:'#f97316'},{k:'rider-paid',l:'Rider Paid',c:'#38bdf8'},{k:'customer-paid',l:'Cust Paid',c:'#a78bfa'},{k:'settled',l:'Settled',c:'#4ade80'}];
+  document.getElementById('an-pay').innerHTML=pays.map(x=>{const cnt=orders.filter(o=>o.payment===x.k).length,pct=orders.length?Math.round(cnt/orders.length*100):0;return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:'+x.c+';font-weight:500">'+x.l+'</span><span style="color:#334155">'+cnt+'</span></div><div class="bar-bg"><div class="bar-fill" style="width:'+pct+'%;background:'+x.c+'"></div></div></div>';}).join('');
+  document.getElementById('an-riders').innerHTML=riders.map(r=>{const d=orders.filter(o=>o.rider_id===r.id&&o.status==='delivered').length,a=orders.filter(o=>o.rider_id===r.id&&o.status==='assigned').length;return '<tr><td style="font-weight:500">'+r.name+'</td><td style="color:#4ade80;font-weight:700">'+d+'</td><td style="color:#38bdf8">'+a+'</td><td><span class="pill '+(r.status==='free'?'p-delivered':r.status==='busy'?'p-custpaid':'p-pending')+'">'+r.status+'</span></td></tr>';}).join('');
+}
+
+// ═══════════════════════════════════════════════
+// TAB NAVIGATION
+// ═══════════════════════════════════════════════
+function showTab(id,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='settlement'){
+    // Reload fresh data before rendering settlement
+    silentRefresh().then(()=>renderSettlement());
+  }
+}
+
+// ═══════════════════════════════════════════════
+// RIDER MOBILE PAGE
+// ═══════════════════════════════════════════════
+async function showRiderPage(riderId,riderName){
+  document.querySelector('.topbar').style.display='none';
+  document.querySelector('.stat-bar').style.display='none';
+  document.querySelector('.main').style.display='none';
+  document.getElementById('loading-msg').style.display='none';
+
+  const page=document.createElement('div');
+  page.id='rider-page';
+  page.style.cssText='min-height:100vh;background:#0f1117;padding:20px;font-family:Segoe UI,system-ui,sans-serif;max-width:420px;margin:0 auto';
+  page.innerHTML=
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid #1e2235">'
+    +'<div style="width:36px;height:36px;background:#6366f1;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">🛵</div>'
+    +'<div><div style="font-weight:700;font-size:16px;color:#e2e8f0">Trakk</div>'
+    +'<div style="font-size:12px;color:#475569">'+riderName+'</div></div>'
+    +'<div style="margin-left:auto;font-size:11px;color:#4ade80">● Live</div>'
+    +'</div>'
+    +'<div id="rp-content"><div style="text-align:center;color:#334155;padding:40px">Loading...</div></div>';
+  document.body.appendChild(page);
+  await loadRiderOrders(riderId,riderName);
+}
+
+async function loadRiderOrders(riderId,riderName){
+  const content=document.getElementById('rp-content');
+  try{
+    const all=await dbGet('orders','?rider_id=eq.'+riderId+'&status=eq.assigned&order=assigned_at.desc');
+
+    if(!all||all.length===0){
+      content.innerHTML=
+        '<div style="background:#181b27;border:1px solid #1e2235;border-radius:12px;padding:32px;text-align:center">'
+        +'<div style="font-size:48px;margin-bottom:12px">✅</div>'
+        +'<div style="font-size:16px;font-weight:600;color:#4ade80;margin-bottom:6px">No active orders</div>'
+        +'<div style="font-size:13px;color:#475569">You are free. Waiting for next assignment.</div>'
+        +'</div>'
+        +'<div style="margin-top:20px;background:#181b27;border:1px solid #1e2235;border-radius:10px;padding:14px;font-size:12px;color:#475569;line-height:1.8">'
+        +'<div style="font-weight:600;color:#6366f1;margin-bottom:6px">How to update orders</div>'
+        +'Use the links in your WhatsApp message to update order status. Each order message has tap links for:<br><br>'
+        +'📦 Picked up · ✅ Delivered · 💰 Payment type'
+        +'</div>'
+        +'<button onclick="loadRiderOrders(\''+riderId+'\',\''+riderName+'\')" style="width:100%;margin-top:12px;padding:12px;background:#1e2130;color:#94a3b8;border-radius:8px;font-size:13px;border:1px solid #1e2235;cursor:pointer">🔄 Refresh</button>';
+      return;
+    }
+
+    content.innerHTML=all.map(o=>{
+      const total=(o.amount||0)+(o.delivery_fee||200);
+      const pickedUp=o.picked_up_at;
+      return '<div style="background:#181b27;border:1px solid #1e2235;border-radius:12px;padding:18px;margin-bottom:12px">'
+        // Order header
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">'
+        +'<div>'
+        +'<div style="font-size:11px;color:#6366f1;font-weight:600;margin-bottom:3px">'+o.id+'</div>'
+        +'<div style="font-size:18px;font-weight:700;color:#e2e8f0">'+o.merchant_name+'</div>'
+        +'<div style="font-size:13px;color:#475569;margin-top:3px">📍 '+o.drop_area+'</div>'
+        +'</div>'
+        +'<div style="text-align:right">'
+        +'<div style="font-size:20px;font-weight:700;color:#4ade80">Rs '+total.toLocaleString()+'</div>'
+        +'<div style="font-size:11px;color:#334155">Collect from customer</div>'
+        +(pickedUp?'<div style="font-size:10px;color:#38bdf8;margin-top:4px">🛵 En route</div>':'')
+        +'</div></div>'
+        // Amount breakdown
+        +'<div style="background:#0d0f18;border-radius:8px;padding:12px;margin-bottom:10px">'
+        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">'
+        +'<div><span style="color:#475569">Food amount</span><div style="color:#e2e8f0;font-weight:600;margin-top:2px">Rs '+(o.amount||0).toLocaleString()+'</div></div>'
+        +'<div><span style="color:#475569">Delivery fee</span><div style="color:#4ade80;font-weight:600;margin-top:2px">Rs '+(o.delivery_fee||200).toLocaleString()+'</div></div>'
+        +'</div>'
+        // Customer details
+        +((o.customer_name||o.customer_phone)?
+          '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #1e2235;font-size:12px">'
+          +(o.customer_name?'<div style="color:#94a3b8">'+o.customer_name+'</div>':'')
+          +(o.customer_phone?'<div style="color:#6366f1;font-weight:600">'+o.customer_phone+'</div>':'')
+          +'</div>':''
+        )
+        // Address
+        +(o.customer_address?
+          '<div style="margin-top:6px;font-size:12px;color:#94a3b8;padding-top:6px;border-top:1px solid #1e2235">📍 '+o.customer_address+'</div>':''
+        )
+        // Maps pin
+        +(o.location_pin?
+          '<div style="margin-top:8px"><a href="'+o.location_pin+'" target="_blank" style="display:flex;align-items:center;gap:6px;background:#0c2d1a;border:1px solid #14532d;border-radius:7px;padding:8px 10px;text-decoration:none">'
+          +'<span style="font-size:16px">📍</span>'
+          +'<span style="font-size:12px;color:#4ade80;font-weight:600">Open in Google Maps</span>'
+          +'<span style="margin-left:auto;font-size:11px;color:#4ade80">→</span>'
+          +'</a></div>':''
+        )
+        // Notes
+        +(o.notes?'<div style="margin-top:6px;font-size:12px;color:#6366f1;padding-top:6px;border-top:1px solid #1e2235">📝 '+o.notes+'</div>':'')
+        +'</div>'
+        // WhatsApp reminder
+        +'<div style="background:#0d0f18;border-radius:8px;padding:10px;font-size:11px;color:#475569;text-align:center">'
+        +'Use the links in your WhatsApp message to update status'
+        +'</div>'
+        +'</div>';
+    }).join('')
+    +'<button onclick="loadRiderOrders(\''+riderId+'\',\''+riderName+'\')" style="width:100%;margin-top:4px;padding:12px;background:#1e2130;color:#94a3b8;border-radius:8px;font-size:13px;border:1px solid #1e2235;cursor:pointer">🔄 Refresh</button>';
+
+    // Auto refresh every 30 seconds
+    setTimeout(()=>loadRiderOrders(riderId,riderName),30000);
+
+  }catch(e){
+    content.innerHTML='<div style="color:#f87171;padding:20px;text-align:center">Error: '+e.message+'</div>';
+  }
+}
+</script>
+</body>
+</html>
